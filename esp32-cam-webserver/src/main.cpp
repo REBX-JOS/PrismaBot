@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <esp_camera.h>
 #include <esp_int_wdt.h>
 #include <esp_task_wdt.h>
@@ -5,7 +6,7 @@
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include "src/parsebytes.h"
+#include "parsebytes.h"
 #include "time.h"
 #include <ESPmDNS.h>
 
@@ -49,7 +50,7 @@
 #endif
 
 // Upstream version string
-#include "src/version.h"
+#include "version.h"
 
 // Pin Mappings
 #include "camera_pins.h"

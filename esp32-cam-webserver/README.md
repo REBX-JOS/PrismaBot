@@ -5,6 +5,32 @@ It is also quite popular (Hi YouTubers!!) so I do not simply want to 'hard aband
 
 I am in the process of archiving it; expect some additional instructions and links to alternatives to appear here soon.
 
+## PlatformIO / VSCode Build (espressif32 6.x, arduino-esp32 3.x)
+
+This project has been adapted for **plug-and-play** use with PlatformIO in VSCode.
+
+### Quick Start
+1. Open the `esp32-cam-webserver` folder in VSCode with the PlatformIO extension installed.
+2. Copy `myconfig.sample.h` to `myconfig.h` and edit your WiFi credentials (and optionally camera model/name).
+3. Click **Build** (✓) then **Upload** (→) in the PlatformIO toolbar.
+4. Open the **Serial Monitor** at 115200 baud — the camera will print its IP address once connected.
+5. Open `http://<IP>/` in your browser to access the live camera web UI.
+
+### Project Layout
+```
+esp32-cam-webserver/
+├── src/             ← C++ source files (main.cpp, app_httpd.cpp, storage.cpp, …)
+├── include/         ← Header files (camera_pins.h, storage.h, index pages, CSS, …)
+├── myconfig.sample.h  ← Copy → myconfig.h and fill in your settings (gitignored)
+└── platformio.ini   ← PlatformIO build config (AI Thinker ESP32-CAM, PSRAM enabled)
+```
+
+### Notes
+- The default board is **AI Thinker ESP32-CAM** (`board = esp32cam`). Edit `platformio.ini` to switch to another supported model and set the matching `CAMERA_MODEL_*` define.
+- SPIFFS is used for saving camera preferences. The `min_spiffs.csv` partition table is used to give enough room for both the app and the SPIFFS partition.
+- OTA (Over-The-Air) upload settings are in `platformio.ini` (commented out by default).
+- `LEDC_CHANNEL_0` and `LEDC_TIMER_0` are standard ESP-IDF enum values — **do not redefine them** in any project header.
+
 # ESP32-CAM example revisited. &nbsp;&nbsp;&nbsp; <span title="Master branch build status">[![CI Status](https://travis-ci.com/easytarget/esp32-cam-webserver.svg?branch=master)](https://travis-ci.com/github/easytarget/esp32-cam-webserver)</span> &nbsp;&nbsp; <span title="ESP EYE">![ESP-EYE logo](Docs/logo.svg)</span>
 
 ## Taken from the ESP examples, and expanded
@@ -56,7 +82,7 @@ https://randomnerdtutorials.com/esp32-cam-troubleshooting-guide/
 
 ### Known Issues
 
-Builds made with PlatformIO are currently (v4.0) broken; the stream will die shortly after starting. See https://github.com/easytarget/esp32-cam-webserver/issues/218 for more info.
+The PlatformIO streaming issue reported in v4.0 (ERR_INVALID_CHUNK_ENCODING) has been resolved by the project restructuring for espressif32 6.x / arduino-esp32 3.x. See the **PlatformIO / VSCode Build** section above.
 
 The ESP32 itself is susceptible to the usual list of WiFi problems, not helped by having small antennas, older designs, congested airwaves and demanding users. The majority of disconnects, stutters and other comms problems are simply due to 'WiFi issues'. The AI-THINKER camera module & esp32 combination is quite susceptible to power supply problems affecting both WiFi conctivity and Video quality; short cabling and decent power supplies are your friend here; also well cooled cases and, if you have the time, decoupling capacitors on the power lines.
 

@@ -13,6 +13,7 @@ def main():
     calibrador.iniciar()
     print("Calibración terminada.")
     calibrador.terminar_ventana()
+    vid.release()
 
 if __name__ == "__main__":
     main()
