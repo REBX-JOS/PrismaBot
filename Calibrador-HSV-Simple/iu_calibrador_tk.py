@@ -5,17 +5,25 @@ import tkinter.ttk as ttk
 ventana = tk.Tk()
 ventana.title("Selector HSV")
 ventana.geometry("1298x895")
-ventana.resizable(False, False) # Bloquear la redimensión de la ventana en ambos ejes.
-#ventana.configure(background="green")
+ventana.resizable(True, True)  # Permitir redimensión y maximizar la ventana.
+
+# Configurar pesos de fila/columna para que la ventana escale correctamente.
+ventana.grid_columnconfigure(0, weight=1)
+ventana.grid_rowconfigure(1, weight=0)  # Fila de controles (tamaño fijo)
+ventana.grid_rowconfigure(2, weight=1)  # Fila de imágenes (se expande)
 
 # Configurando la apariencia básica y los marcos.
 tk.Label(ventana, text="Calibrador para el Color", font="Arial 18", pady=15).grid(row=0, column=0, columnspan=2)
-marco_arriba = tk.Frame(ventana, width=600, height=500, relief="ridge", background="red", padx=10, pady=5)
-marco_arriba.grid(row=1, column=0)
-marco_acciones = tk.Frame(marco_arriba, width=600, height=100, padx=5, pady=5)
+marco_arriba = tk.Frame(ventana, relief="ridge", background="red", padx=10, pady=5)
+marco_arriba.grid(row=1, column=0, sticky="ew")
+marco_arriba.grid_columnconfigure(1, weight=1)
+marco_acciones = tk.Frame(marco_arriba, padx=5, pady=5)
 marco_acciones.grid(row=5, column=0, columnspan=2)
-marco_abajo = tk.Frame(ventana, width=600, height=600, relief="solid", background="blue", padx=5, pady=5)
-marco_abajo.grid(row=2, column=0)
+marco_abajo = tk.Frame(ventana, relief="solid", background="blue", padx=5, pady=5)
+marco_abajo.grid(row=2, column=0, sticky="nsew")
+marco_abajo.grid_columnconfigure(0, weight=1)
+marco_abajo.grid_columnconfigure(1, weight=1)
+marco_abajo.grid_rowconfigure(0, weight=1)
 
 hsv_min_config = (0, 0, 0)
 hsv_max_config = (180, 255, 255)
