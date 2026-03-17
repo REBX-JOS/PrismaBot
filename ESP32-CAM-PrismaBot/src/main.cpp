@@ -31,7 +31,7 @@ void setup() {
     // Motor GPIO
     robot_init();
 
-    // I2C OLED — optional; system continues if not found
+    // I2C LCD — optional; system continues if not found
     if (!display_init()) {
         Serial.println("[display] No display found — continuing without.");
     }
@@ -90,7 +90,7 @@ void loop() {
     // ── 7. Q-table update ─────────────────────────────────────────
     agent.update(color, pos, action, reward, next_color, next_pos);
 
-    // ── 8. Refresh OLED ──────────────────────────────────────────
+    // ── 8. Refresh LCD ───────────────────────────────────────────
     display_update(color, pos, action,
                    agent.episode(), step_count, total_reward);
 

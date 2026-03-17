@@ -1,6 +1,6 @@
 #pragma once
 
-// Firmware version — shown on OLED splash and in Serial output
+// Firmware version — shown on LCD splash and in Serial output
 #define PRISMABOT_VERSION "1.0.0"
 
 /*
@@ -23,11 +23,13 @@
 #define MOTOR_B_IN3   12
 #define MOTOR_B_IN4   13
 
-// ── I2C OLED display (SSD1306 128×64) ────────────────────────────
+// ── I2C LCD display (HD44780 20×4 via PCF8574 I2C backpack) ──────
 // GPIO 2 / 4 are shared with onboard LEDs; they still work as I2C.
 #define I2C_SDA        2
 #define I2C_SCL        4
-#define DISPLAY_ADDR   0x3C   // most SSD1306 breakouts use 0x3C
+#define DISPLAY_ADDR   0x27   // PCF8574 backpack default; try 0x3F if not found
+#define LCD_COLS       20     // characters per row
+#define LCD_ROWS        4     // number of rows
 
 // ── Camera settings ───────────────────────────────────────────────
 #define CAM_XCLK_FREQ_HZ  20000000      // 20 MHz

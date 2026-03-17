@@ -39,7 +39,7 @@ Camera frame
                               │
                               ▼
                     [ display_module.cpp ]
-                       OLED status screen
+                       LCD 20×4 status screen
 ```
 
 ### Q-Learning State Space
@@ -79,7 +79,7 @@ Camera frame
 - **AI Thinker ESP32-CAM** (OV2640 camera)
 - **L298N dual H-bridge motor driver**
 - **Two DC motors** (left and right wheel)
-- **SSD1306 128×64 OLED display** (I2C, address 0x3C)
+- **HD44780 20×4 LCD with PCF8574 I2C backpack** (address 0x27 by default; try 0x3F if not found)
 - 5 V power supply for motors; 3.3 V logic for ESP32-CAM
 - USB-to-TTL adapter for programming (ESP32-CAM has no USB port)
 
@@ -98,14 +98,14 @@ Camera frame
 | GND       | GND            |                 |
 | +5V (logic)| 3.3 V        | or external 5 V |
 
-### OLED Display → ESP32-CAM
+### LCD Display → ESP32-CAM
 
-| OLED pin | ESP32-CAM GPIO | Notes                    |
-|----------|----------------|--------------------------|
-| SDA      | GPIO 2         | Shared with status LED   |
-| SCL      | GPIO 4         | Shared with flash LED    |
-| VCC      | 3.3 V          |                          |
-| GND      | GND            |                          |
+| LCD pin (backpack) | ESP32-CAM GPIO | Notes                    |
+|--------------------|----------------|--------------------------|
+| SDA                | GPIO 2         | Shared with status LED   |
+| SCL                | GPIO 4         | Shared with flash LED    |
+| VCC                | 5 V            | Most backpacks need 5 V  |
+| GND                | GND            |                          |
 
 > **Note:** All GPIO assignments can be changed in
 > `include/robot_config.h` without touching any other file.
@@ -116,8 +116,8 @@ Camera frame
 
 1. Install [PlatformIO](https://platformio.org/) inside VS Code.
 2. Open the `ESP32-CAM-PrismaBot` folder as a PlatformIO project.
-3. PlatformIO will automatically install the **U8g2** library listed
-   in `platformio.ini`.
+3. PlatformIO will automatically install the **LiquidCrystal_I2C** library
+   listed in `platformio.ini`.
 4. Connect the ESP32-CAM via a USB-to-TTL adapter with the IO0 pin
    pulled to GND during upload (boot mode).
 5. Click **Upload** in PlatformIO.
@@ -181,7 +181,7 @@ To change the goal colour (triggers the +50 finish reward):
 After flashing:
 
 1. Place the robot on the colour-coded track.
-2. Power on — the OLED shows **"PrismaBot / Starting…"** then
+2. Power on — the LCD shows **"PrismaBot vX.X.X / Starting…"** then
    **"PrismaBot / Ready!"**.
 3. The agent begins exploring immediately (epsilon = 0.30 initially).
 4. Each episode ends when the goal colour is reached or the
@@ -208,12 +208,12 @@ After flashing:
 | `include/vision.h`         | Camera init + colour/position detection API       |
 | `include/qlearning.h`      | Q-Learning agent class                            |
 | `include/robot_control.h`  | Motor driver abstraction                          |
-| `include/display_module.h` | OLED display API                                  |
+| `include/display_module.h` | LCD 20×4 display API                              |
 | `include/rewards.h`        | Reward function API                               |
 | `src/vision.cpp`           | RGB565 → HSV conversion, frame analysis           |
 | `src/qlearning.cpp`        | Epsilon-greedy selection, Bellman update          |
 | `src/robot_control.cpp`    | L298N GPIO sequences + timing                     |
-| `src/display_module.cpp`   | U8g2 SSD1306 rendering                            |
+| `src/display_module.cpp`   | LiquidCrystal_I2C HD44780 20×4 rendering          |
 | `src/rewards.cpp`          | Scalar reward computation                         |
 | `src/main.cpp`             | `setup()` / `loop()` — wires all modules together |
 
@@ -251,6 +251,7 @@ using the `Preferences` library after each episode, and restore them in
 
 ### Swap the display
 
-Replace only the `U8G2_SSD1306_128X64_NONAME_F_SW_I2C` constructor in
-`src/display_module.cpp` with the U8g2 variant that matches your panel.
-The rest of the code is display-agnostic.
+Change `DISPLAY_ADDR`, `LCD_COLS`, and `LCD_ROWS` in `robot_config.h`
+for a different LCD size (e.g. 16×2).  The `LiquidCrystal_I2C`
+constructor and `lcd_print_row()` helper in `display_module.cpp` will
+automatically adapt.

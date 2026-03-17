@@ -1,13 +1,13 @@
 #include "display_module.h"
 #include "robot_config.h"
-#include "robot_control.h"  // action_name()#include <Arduino.h>
+#include "robot_control.h"  // action_name()
+#include <Arduino.h>
 #include <Wire.h>
-#include <U8g2lib.h>
+#include <LiquidCrystal_I2C.h>
 
-// SSD1306 128×64 OLED on software I2C so any two GPIOs work as bus.
-// To switch to a different display, replace only this constructor.
-static U8G2_SSD1306_128X64_NONAME_F_SW_I2C
-    u8g2(U8G2_R0, /*clk=*/I2C_SCL, /*data=*/I2C_SDA, U8X8_PIN_NONE);
+// HD44780 20×4 LCD via PCF8574 I2C backpack.
+// To use a different size, change LCD_COLS / LCD_ROWS in robot_config.h.
+static LiquidCrystal_I2C lcd(DISPLAY_ADDR, LCD_COLS, LCD_ROWS);
 
 static bool s_display_ready = false;
 
@@ -15,10 +15,10 @@ static bool s_display_ready = false;
 
 static const char* color_label(ColorID c) {
     switch (c) {
-        case COLOR_RED:    return "RED";
+        case COLOR_RED:    return "RED  ";
         case COLOR_GREEN:  return "GREEN";
-        case COLOR_YELLOW: return "YEL";
-        default:           return "NONE";
+        case COLOR_YELLOW: return "YEL  ";
+        default:           return "NONE ";
     }
 }
 
@@ -30,71 +30,83 @@ static const char* pos_label(Position p) {
     }
 }
 
+// ── Helper: write one full LCD row (pads to LCD_COLS with spaces) ─
+
+static void lcd_print_row(uint8_t row, const char* text) {
+    lcd.setCursor(0, row);
+    int len = 0;
+    for (; text[len] && len < LCD_COLS; len++) {
+        lcd.write((uint8_t)text[len]);
+    }
+    // Pad remainder of the row with spaces to clear old content
+    for (; len < LCD_COLS; len++) {
+        lcd.write(' ');
+    }
+}
+
 // ── Initialisation ────────────────────────────────────────────────
 
 bool display_init() {
-    // Probe I2C bus before initialising U8g2
     Wire.begin(I2C_SDA, I2C_SCL);
+
+    // Probe the I2C bus before handing control to the library
     Wire.beginTransmission(DISPLAY_ADDR);
     if (Wire.endTransmission() != 0) {
-        Serial.println("[display] No I2C device at address 0x3C.");
+        Serial.printf("[display] No I2C device at address 0x%02X.\n",
+                      DISPLAY_ADDR);
         s_display_ready = false;
         return false;
     }
 
-    u8g2.begin();
+    lcd.init();
+    lcd.backlight();
     s_display_ready = true;
-    char splash[32];
+
+    char splash[LCD_COLS + 1];
     snprintf(splash, sizeof(splash), "PrismaBot v%s", PRISMABOT_VERSION);
     display_message(splash, "Starting...");
-    Serial.println("[display] OLED ready.");
+    Serial.println("[display] LCD 20x4 ready.");
     return true;
 }
 
-// ── Status screen ─────────────────────────────────────────────────
+// ── Status screen — 4 rows ────────────────────────────────────────
+//
+//  Row 0:  "ACT: ADVANCE        "
+//  Row 1:  "CLR: GREEN  POS: C  "
+//  Row 2:  "EP:  3   ST:  27    "
+//  Row 3:  "RWD:  47.0    v1.0.0"
 
 void display_update(ColorID color,  Position pos,
                     Action  action, int      episode,
                     int     steps,  float    reward_total) {
     if (!s_display_ready) return;
 
-    char buf[24];
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_6x10_tf);
+    char buf[LCD_COLS + 1];
 
-    // Row 1 — action
-    snprintf(buf, sizeof(buf), "ACT: %s", action_name(action));
-    u8g2.drawStr(0, 10, buf);
+    // Row 0 — current action
+    snprintf(buf, sizeof(buf), "ACT: %-8s", action_name(action));
+    lcd_print_row(0, buf);
 
-    // Row 2 — colour + position
-    snprintf(buf, sizeof(buf), "CLR: %-5s POS: %s",
+    // Row 1 — colour and lateral position
+    snprintf(buf, sizeof(buf), "CLR: %s POS: %s",
              color_label(color), pos_label(pos));
-    u8g2.drawStr(0, 22, buf);
+    lcd_print_row(1, buf);
 
-    // Row 3 — episode / step
-    snprintf(buf, sizeof(buf), "EP: %-3d  ST: %d", episode, steps);
-    u8g2.drawStr(0, 34, buf);
+    // Row 2 — episode and step counter
+    snprintf(buf, sizeof(buf), "EP: %-4d ST: %-5d", episode, steps);
+    lcd_print_row(2, buf);
 
-    // Row 4 — cumulative reward
-    snprintf(buf, sizeof(buf), "RWD: %.1f", reward_total);
-    u8g2.drawStr(0, 46, buf);
-
-    // Row 5 — branding
-    u8g2.setFont(u8g2_font_5x7_tf);
-    char brand[32];
-    snprintf(brand, sizeof(brand), "PrismaBot Q-Agent v%s", PRISMABOT_VERSION);
-    u8g2.drawStr(0, 58, brand);
-
-    u8g2.sendBuffer();
+    // Row 3 — cumulative reward + version tag
+    snprintf(buf, sizeof(buf), "RWD:%-7.1f v%-6s",
+             reward_total, PRISMABOT_VERSION);
+    lcd_print_row(3, buf);
 }
 
 // ── Simple two-line message ───────────────────────────────────────
 
 void display_message(const char* line1, const char* line2) {
     if (!s_display_ready) return;
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_8x13_tf);
-    if (line1) u8g2.drawStr(0, 20, line1);
-    if (line2) u8g2.drawStr(0, 40, line2);
-    u8g2.sendBuffer();
+    lcd.clear();
+    if (line1) lcd_print_row(0, line1);
+    if (line2) lcd_print_row(1, line2);
 }
